@@ -1,0 +1,135 @@
+# IDR-GNSS-FUSION Configuration
+# ================================
+
+project:
+  name: "IDR-GNSS-FUSION"
+  version: "0.1.0"
+  description: "AI-Enhanced Intelligent Dead Reckoning and GNSS/INS Fusion"
+
+# ---- Sensor Configuration ----
+sensor:
+  imu_frequency: 10          # Hz (smartphone typical)
+  external_imu_frequency: 200 # Hz (FOG / external MEMS)
+  gnss_update_rate: 1         # Hz
+
+# ---- Vehicle Configuration ----
+vehicle:
+  type: "car"                  # car | truck | motorcycle | scooter
+  max_acceleration: 5.0        # m/s^2
+  max_braking: -8.0            # m/s^2
+  max_yaw_rate: 90.0           # deg/s
+  max_lateral_velocity: 0.5    # m/s (NHC threshold)
+  max_vertical_velocity: 0.3   # m/s (NHC threshold)
+  max_speed: 50.0              # m/s (~180 km/h)
+
+# ---- Vehicle Profiles ----
+vehicle_profiles:
+  car:
+    max_acceleration: 5.0
+    max_braking: -8.0
+    max_yaw_rate: 90.0
+    max_lateral_velocity: 0.5
+    max_vertical_velocity: 0.3
+  truck:
+    max_acceleration: 3.0
+    max_braking: -5.0
+    max_yaw_rate: 45.0
+    max_lateral_velocity: 0.3
+    max_vertical_velocity: 0.2
+  motorcycle:
+    max_acceleration: 6.0
+    max_braking: -9.0
+    max_yaw_rate: 120.0
+    max_lateral_velocity: 1.0
+    max_vertical_velocity: 0.5
+  scooter:
+    max_acceleration: 4.0
+    max_braking: -6.0
+    max_yaw_rate: 100.0
+    max_lateral_velocity: 0.8
+    max_vertical_velocity: 0.4
+
+# ---- Fusion Configuration ----
+fusion:
+  filter: "EKF"                # EKF | UKF
+  gnss_update_rate: 1          # Hz
+  process_noise_accel: 0.5     # m/s^2
+  process_noise_gyro: 0.01     # rad/s
+  gnss_position_noise: 5.0    # meters
+  gnss_velocity_noise: 0.5    # m/s
+  gnss_heading_noise: 5.0     # degrees
+
+# ---- Dead Reckoning ----
+dead_reckoning:
+  enable_nhc: true
+  enable_map_matching: true
+  enable_zupt: true            # Zero Velocity Update
+  zupt_threshold: 0.3          # m/s^2 (accel magnitude deviation from gravity)
+  max_dr_duration: 300         # seconds before warning
+
+# ---- GNSS Outage Detection ----
+gnss:
+  min_satellites: 4
+  max_hdop: 5.0
+  max_position_accuracy: 20.0  # meters
+  degraded_accuracy: 10.0      # meters
+  recovery_holdoff: 3.0        # seconds before trusting recovered GNSS
+
+# ---- IMU Preprocessing ----
+preprocessing:
+  filter_type: "butterworth"   # butterworth | median | savgol | kalman
+  butterworth_order: 4
+  butterworth_cutoff: 5.0      # Hz
+  outlier_threshold: 5.0       # standard deviations
+  bias_window: 100             # samples for initial bias estimation
+
+# ---- AI Models ----
+model:
+  speed_model: "cnn_gru"
+  fusion_model: "temporal_correction"
+  window_size: 50              # samples per input window
+  stride: 10                   # window stride
+
+# ---- Training ----
+training:
+  batch_size: 64
+  learning_rate: 0.001
+  epochs: 100
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  sequence_split: true         # trajectory-wise splitting
+
+# ---- Deployment ----
+deployment:
+  quantization: "fp32"         # fp32 | fp16 | int8
+  runtime: "onnx"              # onnx | tflite
+
+# ---- GNSS Outage Simulation Scenarios ----
+outage_scenarios:
+  short:
+    duration_m: 50
+    description: "Short tunnel (~3s at 60km/h)"
+  medium:
+    duration_m: 300
+    description: "Underpass or short tunnel (~18s at 60km/h)"
+  long:
+    duration_m: 1000
+    description: "Long tunnel or parking structure (~60s at 60km/h)"
+  urban_canyon:
+    intermittent: true
+    degradation_probability: 0.3
+    description: "Frequent signal degradation in dense urban area"
+
+# ---- Evaluation Metrics ----
+evaluation:
+  position_error_threshold: 0.10  # 10% of distance travelled
+  report_metrics:
+    - "mean_position_error"
+    - "rmse"
+    - "mae"
+    - "max_error"
+    - "p95_error"
+    - "drift_percentage"
+    - "heading_error"
+    - "velocity_error"
